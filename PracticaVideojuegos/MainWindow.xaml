@@ -14,9 +14,12 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <TextBlock Grid.Row="0" Grid.Column="1" Name="TxtWelcome" Text="" FontSize="22" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,6"/>
+
         <Button Grid.Row="0" 
         HorizontalAlignment="Right" 
-        Margin="0,0,15,15" 
+        VerticalAlignment="Bottom"
+        Margin="0,0,15,6" 
         Click="BtnPerfil_Click" 
         Cursor="Hand">
             <Button.Template>
@@ -51,7 +54,6 @@
             
             <StackPanel Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,0,0,0">
 
-                
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
                     <TextBlock Text="TIENDA" Margin="15,0" FontSize="18" FontWeight="Bold"/>
                     <TextBlock Text="COMUNIDAD" Margin="15,0" FontSize="18" FontWeight="Bold"/>

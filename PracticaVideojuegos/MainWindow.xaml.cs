@@ -20,8 +20,18 @@ namespace PracticaVideojuegos
         {
             InitializeComponent();
         }
+
+        public MainWindow(string username)
+        {
+            InitializeComponent();
+            TxtWelcome.Text = $"Bienvenido, {username}";
+        }
         private void BtnPerfil_Click(object sender, RoutedEventArgs e)
         {
+            // Cerrar sesión: volver a la ventana de login
+            var login = new LoginWindow();
+            login.Show();
+            this.Close();
         }
         private void GameButton_Click(object sender, RoutedEventArgs e)
         {
