@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace PracticaVideojuegos
@@ -10,6 +12,12 @@ namespace PracticaVideojuegos
             { "admin", "1234" },
             { "user", "user" } // credencial añadida según petición
         };
+
+        // Control de intentos fallidos y bloqueo temporal por usuario
+        private readonly Dictionary<string, int> _failedAttempts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DateTime> _lockedUntil = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        // Duración del bloqueo para pruebas (ajustable)
+        private readonly TimeSpan _lockDuration = TimeSpan.FromMinutes(1);
 
         public LoginWindow()
         {
@@ -32,16 +40,61 @@ namespace PracticaVideojuegos
                 return;
             }
 
-            if (ValidateCredentials(user, pass))
+            // Buscar si el usuario existe y obtener su índice
+            int userIndex = -1;
+            for (int i = 0; i < _users.GetLength(0); i++)
             {
-                // Iniciar MainWindow y pasar el usuario para mensaje de bienvenida
+                if (string.Equals(_users[i, 0], user, StringComparison.OrdinalIgnoreCase))
+                {
+                    userIndex = i;
+                    break;
+                }
+            }
+
+            if (userIndex == -1)
+            {
+                // Usuario no existe
+                TxtMensaje.Text = "El usuario introducido no existe";
+                return;
+            }
+
+            // Comprueba si el usuario está bloqueado temporalmente
+            if (_lockedUntil.TryGetValue(user, out var until) && DateTime.Now < until)
+            {
+                var remaining = until - DateTime.Now;
+                TxtMensaje.Text = $"Usuario bloqueado temporalmente. Inténtalo de nuevo en {remaining.Seconds} s.";
+                return;
+            }
+
+            // Comprobación de contraseña
+            if (string.Equals(_users[userIndex, 1], pass))
+            {
+                // Login correcto: resetear intentos y abrir MainWindow
+                if (_failedAttempts.ContainsKey(user))
+                    _failedAttempts.Remove(user);
+                if (_lockedUntil.ContainsKey(user))
+                    _lockedUntil.Remove(user);
+
                 var main = new MainWindow(user);
                 main.Show();
                 this.Close();
+                return;
+            }
+
+            // Contraseña incorrecta: incrementar contador
+            int attempts = 0;
+            _failedAttempts.TryGetValue(user, out attempts);
+            attempts++;
+            _failedAttempts[user] = attempts;
+
+            if (attempts >= 3)
+            {
+                _lockedUntil[user] = DateTime.Now.Add(_lockDuration);
+                TxtMensaje.Text = "Usuario bloqueado temporalmente debido a varios intentos fallidos.";
             }
             else
             {
-                TxtMensaje.Text = "Usuario o contraseña incorrectos.";
+                TxtMensaje.Text = "La contraseña introducida no es correcta";
             }
         }
 
