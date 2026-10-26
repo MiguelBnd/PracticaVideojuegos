@@ -16,23 +16,31 @@
 
         <TextBlock Grid.Row="0" Grid.Column="1" Name="TxtWelcome" Text="" FontSize="22" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,6"/>
 
-        <Button Grid.Row="0" 
-        HorizontalAlignment="Right" 
-        VerticalAlignment="Bottom"
-        Margin="0,0,15,6" 
-        Click="BtnPerfil_Click" 
-        Cursor="Hand">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <ContentPresenter/>
-                </ControlTemplate>
-            </Button.Template>
-            <TextBlock Text="Mi Perfil" 
-               Foreground="Blue" 
-               TextDecorations="Underline" 
-               FontSize="16" 
-               FontWeight="SemiBold"/>
-        </Button>
+        <StackPanel Grid.Row="0" 
+                    HorizontalAlignment="Right" 
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,15,6"
+                    Orientation="Horizontal">
+            <Button Margin="0,0,8,0"
+                    Click="BtnCerrarSesion_Click"
+                    Cursor="Hand"
+                    Padding="10,4">
+                <TextBlock Text="Cerrar sesión" 
+                           Foreground="Blue" 
+                           TextDecorations="Underline" 
+                           FontSize="16" 
+                           FontWeight="SemiBold"/>
+            </Button>
+            <Button Click="BtnCerrarAplicacion_Click"
+                    Cursor="Hand"
+                    Padding="10,4">
+                <TextBlock Text="Cerrar aplicación" 
+                           Foreground="Blue" 
+                           TextDecorations="Underline" 
+                           FontSize="16" 
+                           FontWeight="SemiBold"/>
+            </Button>
+        </StackPanel>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>

@@ -26,13 +26,18 @@ namespace PracticaVideojuegos
             InitializeComponent();
             TxtWelcome.Text = $"Bienvenido, {username}";
         }
-        private void BtnPerfil_Click(object sender, RoutedEventArgs e)
+        private void BtnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
-            // Cerrar sesión: volver a la ventana de login
             var login = new LoginWindow();
             login.Show();
             this.Close();
         }
+
+        private void BtnCerrarAplicacion_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
         private void GameButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is string name)

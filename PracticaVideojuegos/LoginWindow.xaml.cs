@@ -36,7 +36,12 @@ namespace PracticaVideojuegos
 
             if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
             {
-                TxtMensaje.Text = "Rellena usuario y contraseña.";
+                MessageBox.Show(
+                    "Introduzca datos",
+                    "Error de inicio de sesión",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                TxtMensaje.Text = "Introduzca datos";
                 return;
             }
 
@@ -54,6 +59,11 @@ namespace PracticaVideojuegos
             if (userIndex == -1)
             {
                 // Usuario no existe
+                MessageBox.Show(
+                    "El usuario introducido no existe",
+                    "Error de inicio de sesión",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 TxtMensaje.Text = "El usuario introducido no existe";
                 return;
             }
@@ -90,10 +100,20 @@ namespace PracticaVideojuegos
             if (attempts >= 3)
             {
                 _lockedUntil[user] = DateTime.Now.Add(_lockDuration);
-                TxtMensaje.Text = "Usuario bloqueado temporalmente debido a varios intentos fallidos.";
+                MessageBox.Show(
+                    "Se ha bloqueado temporalmente el usuario",
+                    "Error de inicio de sesión",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                TxtMensaje.Text = "Se ha bloqueado temporalmente el usuario";
             }
             else
             {
+                MessageBox.Show(
+                    "La contraseña introducida no es correcta",
+                    "Error de inicio de sesión",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 TxtMensaje.Text = "La contraseña introducida no es correcta";
             }
         }
