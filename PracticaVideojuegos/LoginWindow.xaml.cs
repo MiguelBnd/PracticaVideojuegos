@@ -1,23 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using MySql.Data.MySqlClient;
 
 namespace PracticaVideojuegos
 {
     public partial class LoginWindow : Window
     {
-        // Almacén de credenciales en memoria: usuario, contraseña
-        private readonly string[,] _users = new string[,] {
-            { "user1", "pass1" },
-            { "admin", "1234" },
-            { "user", "user" } // credencial añadida según petición
-        };
-
         // Control de intentos fallidos y bloqueo temporal por usuario
         private readonly Dictionary<string, int> _failedAttempts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DateTime> _lockedUntil = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         // Duración del bloqueo para pruebas (ajustable)
         private readonly TimeSpan _lockDuration = TimeSpan.FromMinutes(1);
+        private readonly DatabaseHelper _database = new DatabaseHelper();
 
         public LoginWindow()
         {
@@ -45,26 +40,9 @@ namespace PracticaVideojuegos
                 return;
             }
 
-            // Buscar si el usuario existe y obtener su índice
-            int userIndex = -1;
-            for (int i = 0; i < _users.GetLength(0); i++)
+            if (IsSqlInjectionAttempt(user) || IsSqlInjectionAttempt(pass))
             {
-                if (string.Equals(_users[i, 0], user, StringComparison.OrdinalIgnoreCase))
-                {
-                    userIndex = i;
-                    break;
-                }
-            }
-
-            if (userIndex == -1)
-            {
-                // Usuario no existe
-                MessageBox.Show(
-                    "El usuario introducido no existe",
-                    "Error de inicio de sesión",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                TxtMensaje.Text = "El usuario introducido no existe";
+                ShowMessage("No se permite el acceso", "Acceso denegado", MessageBoxImage.Warning);
                 return;
             }
 
@@ -72,26 +50,37 @@ namespace PracticaVideojuegos
             if (_lockedUntil.TryGetValue(user, out var until) && DateTime.Now < until)
             {
                 var remaining = until - DateTime.Now;
-                TxtMensaje.Text = $"Usuario bloqueado temporalmente. Inténtalo de nuevo en {remaining.Seconds} s.";
+                TxtMensaje.Text = $"Usuario bloqueado temporalmente. Inténtalo de nuevo en {(int)remaining.TotalSeconds} s.";
                 return;
             }
 
-            // Comprobación de contraseña
-            if (string.Equals(_users[userIndex, 1], pass))
+            try
             {
-                // Login correcto: resetear intentos y abrir MainWindow
-                if (_failedAttempts.ContainsKey(user))
+                if (_database.ValidateCredentials(user, pass))
+                {
+                    // Login correcto: resetear intentos y abrir MainWindow
                     _failedAttempts.Remove(user);
-                if (_lockedUntil.ContainsKey(user))
                     _lockedUntil.Remove(user);
 
-                var main = new MainWindow(user);
-                main.Show();
-                this.Close();
-                return;
-            }
+                    var main = new MainWindow(user);
+                    main.Show();
+                    Close();
+                    return;
+                }
 
-            // Contraseña incorrecta: incrementar contador
+                RegisterFailedAttempt(user);
+            }
+            catch (MySqlException)
+            {
+                ShowMessage(
+                    "No se ha podido conectar con la base de datos. Comprueba que MySQL está iniciado y la configuración de conexión es correcta.",
+                    "Error de conexión",
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private void RegisterFailedAttempt(string user)
+        {
             int attempts = 0;
             _failedAttempts.TryGetValue(user, out attempts);
             attempts++;
@@ -110,22 +99,54 @@ namespace PracticaVideojuegos
             else
             {
                 MessageBox.Show(
-                    "La contraseña introducida no es correcta",
+                    "Usuario o contraseña incorrectos",
                     "Error de inicio de sesión",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
-                TxtMensaje.Text = "La contraseña introducida no es correcta";
+                TxtMensaje.Text = "Usuario o contraseña incorrectos";
             }
         }
 
-        private bool ValidateCredentials(string user, string pass)
+        private static bool IsSqlInjectionAttempt(string value)
         {
-            for (int i = 0; i < _users.GetLength(0); i++)
+            var normalized = value.Replace(" ", string.Empty, StringComparison.Ordinal).ToLowerInvariant();
+            return normalized.Contains("'or'1'='1", StringComparison.Ordinal)
+                || normalized.Contains("or1=1", StringComparison.Ordinal);
+        }
+
+        private void BtnNuevoUsuario_Click(object sender, RoutedEventArgs e)
+        {
+            var user = TxtUsuario.Text?.Trim();
+            var pass = PwdPassword.Password ?? string.Empty;
+
+            if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
             {
-                if (_users[i, 0] == user && _users[i, 1] == pass)
-                    return true;
+                ShowMessage("Introduzca usuario y contraseña para crear la cuenta", "Datos incompletos", MessageBoxImage.Warning);
+                return;
             }
-            return false;
+
+            try
+            {
+                _database.CreateUser(user, pass);
+                ShowMessage("Usuario creado correctamente", "Nuevo usuario", MessageBoxImage.Information);
+            }
+            catch (MySqlException ex) when (ex.Number == 1062)
+            {
+                ShowMessage("El usuario ya existe", "Nuevo usuario", MessageBoxImage.Warning);
+            }
+            catch (MySqlException)
+            {
+                ShowMessage(
+                    "No se ha podido conectar con la base de datos. Comprueba que MySQL está iniciado y la configuración de conexión es correcta.",
+                    "Error de conexión",
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private void ShowMessage(string message, string title, MessageBoxImage image)
+        {
+            MessageBox.Show(message, title, MessageBoxButton.OK, image);
+            TxtMensaje.Text = message;
         }
 
         private void BtnSalir_Click(object sender, RoutedEventArgs e)
